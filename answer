@@ -1,0 +1,70 @@
+import java.util.*;
+
+public class HolidayMaximizer {
+    private final Map<String, List<String>> officeAdjacency;
+    private final Map<String, List<Integer>> officeHolidays;
+    private static final int MAX_QUARTERLY_MOVES = 2;
+    private static final int MAX_YEARLY_MOVES = 8;
+
+    public HolidayMaximizer(Map<String, List<String>> officeAdjacency, Map<String, List<Integer>> officeHolidays) {
+        this.officeAdjacency = officeAdjacency;
+        this.officeHolidays = officeHolidays;
+    }
+
+    public List<String> maximizeHolidays(String startOffice) {
+        List<String> officeSequence = new ArrayList<>();
+        officeSequence.add(startOffice);
+        int totalMoves = 0;
+        
+        for (int month = 0; month < 12; month++) {
+            String currentOffice = officeSequence.get(officeSequence.size() - 1);
+            String bestOffice = currentOffice;
+            int maxHolidays = officeHolidays.get(currentOffice).get(month);
+            int quarter = month / 3;
+            int quarterlyMoves = (int) officeSequence.stream().skip(quarter * 3).limit(3).distinct().count() - 1;
+
+            for (String neighbor : officeAdjacency.getOrDefault(currentOffice, new ArrayList<>())) {
+                int holidays = officeHolidays.get(neighbor).get(month);
+
+                if (holidays > maxHolidays && 
+                    totalMoves < MAX_YEARLY_MOVES &&
+                    quarterlyMoves < MAX_QUARTERLY_MOVES) {
+                    maxHolidays = holidays;
+                    bestOffice = neighbor;
+                }
+            }
+
+            if (!bestOffice.equals(currentOffice)) {
+                totalMoves++;
+            }
+            officeSequence.add(bestOffice);
+        }
+        return officeSequence;
+    }
+
+    public static void main(String[] args) {
+        // Sample office adjacency and holiday data
+        Map<String, List<String>> officeAdjacency = Map.of(
+            "Noida", List.of("Delhi", "Gurugram", "Faridabad"),
+            "Delhi", List.of("Noida", "Gurugram", "Sonipat", "Faridabad"),
+            "Sonipat", List.of("Delhi", "Panipat", "Gurugram"),
+            "Gurugram", List.of("Noida", "Delhi", "Sonipat", "Panipat", "Faridabad"),
+            "Panipat", List.of("Sonipat", "Gurugram"),
+            "Faridabad", List.of("Delhi", "Noida", "Gurugram")
+        );
+
+        Map<String, List<Integer>> officeHolidays = Map.of(
+            "Noida", Arrays.asList(1, 3, 4, 2, 1, 5, 6, 5, 1, 7, 2, 1),
+            "Delhi", Arrays.asList(5, 1, 8, 2, 1, 7, 2, 6, 2, 8, 2, 6),
+            "Sonipat", Arrays.asList(2, 5, 8, 2, 1, 6, 9, 3, 2, 1, 5, 7),
+            "Gurugram", Arrays.asList(6, 4, 1, 6, 3, 4, 7, 3, 2, 5, 7, 8),
+            "Panipat", Arrays.asList(2, 4, 3, 1, 7, 2, 6, 8, 2, 1, 4, 6),
+            "Faridabad", Arrays.asList(2, 4, 6, 7, 2, 1, 3, 6, 3, 1, 6, 8)
+        );
+
+        HolidayMaximizer maximizer = new HolidayMaximizer(officeAdjacency, officeHolidays);
+        List<String> result = maximizer.maximizeHolidays("Noida");
+
+        System.out.println("Office sequence to maximize holidays: " + result);
+    }
+}
